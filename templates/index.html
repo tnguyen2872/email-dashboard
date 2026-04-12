@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Intelligence Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f5f5f5;
+            color: #1a1a1a;
+        }
+
+        header {
+            background: #1F4E79;
+            color: white;
+            padding: 1.5rem 2rem;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        header p {
+            font-size: 0.875rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* ── Stat cards ── */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.25rem;
+            text-align: center;
+            border: 1px solid #e5e5e5;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1F4E79;
+        }
+
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        /* ── Grid layout ── */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 700px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            border: 1px solid #e5e5e5;
+        }
+
+        .card h2 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.25rem;
+        }
+
+        /* ── Chart ── */
+        .chart-wrapper {
+            position: relative;
+            height: 240px;
+        }
+
+        /* ── Senders table ── */
+        .sender-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.875rem;
+        }
+
+        .sender-row:last-child {
+            border-bottom: none;
+        }
+
+        .sender-name {
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 80%;
+        }
+
+        .sender-count {
+            background: #e8f0f8;
+            color: #1F4E79;
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 20px;
+            flex-shrink: 0;
+        }
+
+        /* ── Email feed ── */
+        .email-row {
+            padding: 0.875rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .email-row:last-child {
+            border-bottom: none;
+        }
+
+        .email-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .email-category {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: #f0f0f0;
+            color: #444;
+        }
+
+        .email-date {
+            font-size: 0.75rem;
+            color: #999;
+        }
+
+        .email-subject {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 0.15rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-sender {
+            font-size: 0.8rem;
+            color: #777;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-preview {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ── Full width card ── */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>📧 Email Intelligence Dashboard</h1>
+        <p>Powered by Gmail API + Claude AI</p>
+    </header>
+
+    <div class="container">
+
+        <!-- Stat cards -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number">{{ total_emails }}</div>
+                <div class="label">Total emails</div>
+            </div>
+            {% for category, count in category_counts %}
+            <div class="stat-card">
+                <div class="number">{{ count }}</div>
+                <div class="label">{{ category }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="grid">
+
+            <!-- Bar chart -->
+            <div class="card">
+                <h2>Emails by category</h2>
+                <div class="chart-wrapper">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Top senders -->
+            <div class="card">
+                <h2>Top senders</h2>
+                {% for sender, count in top_senders %}
+                <div class="sender-row">
+                    <span class="sender-name">{{ sender }}</span>
+                    <span class="sender-count">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Recent emails — full width -->
+            <div class="card full-width">
+                <h2>Recent emails</h2>
+                {% for email in recent_emails %}
+                <div class="email-row">
+                    <div class="email-meta">
+                        <span class="email-category">{{ email[5] }}</span>
+                        <span class="email-date">{{ email[3][:16] }}</span>
+                    </div>
+                    <div class="email-subject">{{ email[2] }}</div>
+                    <div class="email-sender">{{ email[1] }}</div>
+                    <div class="email-preview">{{ email[4][:120] }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ chart_labels | tojson }},
+            datasets: [{
+                label: 'Emails',
+                data: {{ chart_values | tojson }},
+            backgroundColor: [
+                '#1F4E79', '#2E75B6', '#4A90D9', '#7BB3E0',
+                '#A8CDE8', '#C5DDF0', '#E0EEF8'
+            ],
+            borderRadius: 6,
+            borderSkipped: false,
+      }]
+    },
+            options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 },
+                    grid: { color: '#f0f0f0' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+  });
+    </script>
+
+</body>
+
+</html>
