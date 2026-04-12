@@ -1,22 +1,23 @@
 import os
 from flask import Flask, render_template
-from database import get_all_emails, get_category_counts, get_top_senders
+from database import get_all_emails, get_category_counts, get_top_senders, create_table
 
-# Always find templates relative to this file
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, "templates"))
+
+# Create the table automatically when the app starts
+# Safe to call multiple times — uses CREATE TABLE IF NOT EXISTS
+create_table()
 
 
 @app.route("/")
 def dashboard():
     """Main dashboard page."""
-    # Get data from the database
     category_counts = get_category_counts()
     top_senders = get_top_senders(limit=10)
-    recent_emails = get_all_emails()[:20]  # show latest 20
+    recent_emails = get_all_emails()[:20]
 
-    # Prepare chart data — Flask will pass this to the HTML template
     chart_labels = [row[0] for row in category_counts]
     chart_values = [row[1] for row in category_counts]
 
@@ -33,5 +34,5 @@ def dashboard():
 
 if __name__ == "__main__":
     print("Starting Email Dashboard...")
-    print("Open your browser and go to: http://localhost:5000")
-    app.run(debug=True)
+    print("Open your browser and go to: http://localhost:5001")
+    app.run(host="0.0.0.0", port=5000, debug=True)
