@@ -1,0 +1,16 @@
+# Never bake secrets into the container image
+.env
+credentials.json
+token.json
+
+# Don't copy the database — it lives outside the container
+emails.db
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Git files
+.git
+.gitignore
